@@ -84,6 +84,10 @@ vector<Point> processImage(Mat bgr_image, int low1, int low2, int low3, int high
 	return centrePoints;	
 }
 
+void pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vector<Point> currentRed, vector<Point> currentGreen){
+	return;
+}
+
 void sqlStatement(time_t timeIn, int sessionID, char* query){
 	char sql[100] = "INSERT INTO information VALUES (";
 	char timeBuffer[80];
@@ -176,16 +180,16 @@ int main(int argc, char **argv) {
 			    for (int wipe = 0; wipe < 10; ++wipe){
 			    	cap >> origImg;
 			    }
-			    cap >> origImg;
-			    vector<Point> newCenterPoints_RED = processImage(origImg,160,100,100,179,255,255);
-			    vector<Point> newCenterPoints_GREEN = processImage(origImg,45,100,100,90,255,255);
 			    //do processing with respect to base center points and new center points
 			    /*
 			    bool notAtOrigin = true;
 			    while (notAtOrigin){
-					//move chair x,y directions to origin
-					//get new center points for red/green
-					//do math and repeat till at origin (+/- few pixels of error)
+			    	cap >> origImg;
+			    	vector<Point> newCenterPoints_RED = processImage(origImg,160,100,100,179,255,255);
+			    	vector<Point> newCenterPoints_GREEN = processImage(origImg,45,100,100,90,255,255);
+			    	//move chair x,y directions to origin (exit if at origin, change notAtOrigin = false)
+			    	pathToOrigin(baseCenterPoints_RED, baseCenterPoints_GREEN, newCenterPoints_RED, newCenterPoints_GREEN);
+					//repeat till at origin (+/- few pixels of error)
 			    }
 			    */
 			}		
