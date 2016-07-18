@@ -13,6 +13,9 @@
 using namespace std;
 using namespace cv;
 
+enum Direction { left, right, straight, still };
+Direction d = left
+
 vector<Point> processImage(Mat bgr_image, int low1, int low2, int low3, int high1, int high2, int high3){
 	// Show the original images
 	namedWindow("Original Image", WINDOW_NORMAL);
@@ -84,8 +87,46 @@ vector<Point> processImage(Mat bgr_image, int low1, int low2, int low3, int high
 	return centrePoints;	
 }
 
-void pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vector<Point> currentRed, vector<Point> currentGreen){
-	return;
+Direction pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vector<Point> currentRed, vector<Point> currentGreen){
+	Direction d = still;
+	int avgX = (currentRed[0].x + currentRed[1].x + currentGreen[0].x + currentGreen[1].x)/4;
+	int originAvgX = (originRed[0].x + originRed[1].x)/2;
+	int relativeX = avgX-originAvgX;
+	
+	//check which side the chair is on and move it to the middle
+	if (abs(relativeX) > 100){
+		//if the chair is on the left side and hasn't rotated fully, rotate it to the right
+		if(relativeX < 0 && currentRed[0].x - currentRed[1].x > 100){
+			d = right;
+			return d;
+		}
+		//if the chair is on the right side and hasn't rotated fully, rotate it to the left
+		else if(relativeX > 0 && currentRed[0].x - currentRed[1].x > 100){
+			d = left;
+			return d;
+		}
+	}
+	
+	//if the chair is at the centre, rotate it towards the centre
+	if (abs(relativeX) <= 100 && currentRed[0].y - currentRed[1].y > 100){
+		//chair is rotated to the left. Rotate it to the left
+		if (currentRed[0].x - originRed[0].x < 0){
+			d = left;
+			return d;
+		}
+		//chair is rotated to the right. Rotate it to the right
+		else if (currentRed[0].x - originRed[0].x > 0){
+			d = right;
+			return d;
+		}
+	}
+	//if the chair is towards the centre, move it straight until it matches the origin y position
+	if (abs(currentRed[0].y - originRed[0].y) > 100){
+		d = straight;
+		return d;
+	}
+	//return "still" as default
+	return d;
 }
 
 void sqlStatement(time_t timeIn, int sessionID, char* query){
