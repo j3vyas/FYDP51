@@ -127,7 +127,6 @@ Direction pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vecto
 	}
 	//return "still" as default
 	return d;
-}
 
 void sqlStatement(time_t timeIn, int sessionID, char* query){
 	char sql[100] = "INSERT INTO information VALUES (";
@@ -180,6 +179,11 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
+	//Bluetooth setup
+	string command = "Python /home/pi/bluetooth_command.py ";
+	command += "argument_for_command";
+	system(command.c_str());
+
 	//Center points for origin, used to return to original location
 	vector<Point> baseCenterPoints_RED;
 	vector<Point> baseCentrePoints_GREEN;
@@ -229,7 +233,7 @@ int main(int argc, char **argv) {
 			    	vector<Point> newCenterPoints_RED = processImage(origImg,160,100,100,179,255,255);
 			    	vector<Point> newCenterPoints_GREEN = processImage(origImg,45,100,100,90,255,255);
 			    	//move chair x,y directions to origin (exit if at origin, change notAtOrigin = false)
-			    	pathToOrigin(baseCenterPoints_RED, baseCenterPoints_GREEN, newCenterPoints_RED, newCenterPoints_GREEN);
+			    	notAtOrigin = pathToOrigin(baseCenterPoints_RED, baseCenterPoints_GREEN, newCenterPoints_RED, newCenterPoints_GREEN);
 					//repeat till at origin (+/- few pixels of error)
 			    }
 			    */
