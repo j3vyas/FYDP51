@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <ctime>
 #include <string.h>
-#include <unistd.h>
+#include <unistd.h>0
 
 using namespace std;
 using namespace cv;
@@ -84,49 +84,202 @@ vector<Point> processImage(Mat bgr_image, int low1, int low2, int low3, int high
 	namedWindow("origFinal", WINDOW_NORMAL);
 	imshow("origFinal", drawing);
 	waitKey(1);
-	return centrePoints;	
+	return centrePoints;
 }
 
-Direction pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vector<Point> currentRed, vector<Point> currentGreen){
+Direction pathToOrigin(vector<Point> originRed, vector<Point> originGreen, vector<Point> currentRed, vector<Point> currentGreen) {
 	Direction d = still;
-	int avgX = (currentRed[0].x + currentRed[1].x + currentGreen[0].x + currentGreen[1].x)/4;
-	int originAvgX = (originRed[0].x + originRed[1].x)/2;
-	int relativeX = avgX-originAvgX;
+	int numPoints, avgX, chairSize, originAvgX, relativeX;
+	numpoints = currentRed.size() + currentGreen.size();
+	charsize = 0;
+
+	originAvgX = (originRed[0].x + originRed[1].x) / 2;
 	
-	//check which side the chair is on and move it to the middle
-	if (abs(relativeX) > 100){
-		//if the chair is on the left side and hasn't rotated fully, rotate it to the right
-		if(relativeX < 0 && currentRed[0].x - currentRed[1].x > 100){
+	//2 points are detected
+	if (numPoints == 2) {
+		//both 2 red points are detected, facing towards the camera
+		if (currentRed.size() == 2) {
+			//find the relative x position and chair size indicator
+			avgX = (currentRed[0].x + currentRed[1].x) / 2;
+			chairSize = abs(currentRed[0].x - currentRed[1].x);
+			relativeX = avgX - originAvgX;
+
+			//rotate the chair to the left if the chair is to the left of the camera
+			if (relativeX < - (chairSize / 10)) {
+				d = left;
+				return d;
+			}
+			//rotate the chair to the right if the chair is to the right of the camera
+			else if (relativeX > (chairSize / 10)) {
+				d = right;
+				return d;
+			}
+			//move straight if the chair is already at the centre
+			else
+			{	
+				//move only until the chair is close to the origin
+				if(currentRed[0].y - originRed[0].y < chairSize/5)
+				d = straight;
+				return d;
+			}
+		}
+		//1 red, 1 green points are detected, facing left or right
+		else {
+			avgX = (currentRed[0].x + currentGreen[0].x) / 2;
+			chairSize = abs(currentRed[0].x - currentGreen[0].x);
+			relativeX = avgX - originAvgX;
+			
+			//chair is already at the centre, facing left or right
+			if (abs(relativeX) < chairSize / 10) {
+				//rotate the chair to the right if it's facing left
+				if (currentRed[0].x - currentGreen[0].x > 0) {
+					d = right;
+					return d;
+				}
+				//rotate the chair to the left if it's facing right
+				else {
+					d = left;
+					return d;
+				}
+			}
+			//chair is to the left of the centre, facing left or right 
+			else if (relativeX < 0) {
+				//move the chair straight to the centre if it's facing right
+				if (currentRed[0].x - currentGreen[0].x > 0) {
+					d = straight;
+					return d;
+				}
+				//rotate the chair to the right towards the centre if it's facing left
+				else {
+					d = right;
+					return d;
+				}
+			}
+			//chair is to the right of the centre, facing left or right
+			else{
+				//rotate the chair to the left towards the centre if it's facing right 
+				if (currentRed[0].x - currentGreen[0].x > 0) {
+					d = left;
+					return d;
+				}
+				//move the to the centre if it's facing left
+				else {
+					d = straight;
+					return d;
+				}
+			}
+		}
+	}
+	//3 points are found, 2 reds and 1 green. Chair is facing southwest or southeast direction.
+	else if (numPoints == 3) {
+		avgX = (currentRed[0].x + currentRed[1].x + currentGreen[0].x) / 3;
+		chairSize = max(max(abs(currentRed[0].x - currentGreen[0].x), abs(currentred[1].x - currentGreen[0].x)), abs(currentRed[0].x - currentred[1].x));
+		relativeX = avgX - originAvgX;
+		//find the lower red point that lines up with the green point detected
+		point lowerRed;
+		if(currentRed[0].y < currentRed[1].y)
+			lowerRed = currentRed[0];
+		else
+			lowerRed = currentRed[1];
+
+		//Chair is to the right of the centre
+		if (relativeX > (chairSize / 10)) {
+			//move the chair towards the centre if it's facing the centre
+			if(lowerRed.x < currentGreen[0].x && abs(lowerRed.y - currentGreen[0].y) < (chairSize / 20)){
+				d = straight;
+				return d;
+			}
+				
+			//rotate the chair to the right towards the centre
 			d = right;
 			return d;
 		}
-		//if the chair is on the right side and hasn't rotated fully, rotate it to the left
-		else if(relativeX > 0 && currentRed[0].x - currentRed[1].x > 100){
+		//Chair is to the left of the centre
+		else if(relativeX < -(chairSize / 10)){
+			//move the chair towards the centre if it's facing the centre
+			if(lowerRed.x > currentGreen[0].x && abs(lowerRed.y - currentGreen[0].y) < (chairSize / 20)){
+				d = straight;
+				return d;
+			}
+			
+			//rotate the chair to the left towards the centre
 			d = left;
 			return d;
 		}
-	}
-	
-	//if the chair is at the centre, rotate it towards the centre
-	if (abs(relativeX) <= 100 && currentRed[0].y - currentRed[1].y > 100){
-		//chair is rotated to the left. Rotate it to the left
-		if (currentRed[0].x - originRed[0].x < 0){
-			d = left;
-			return d;
+		//Chair is at the centre
+		else{
+			//rotate to the right if the chair is facing southwest
+			if(currentRed[0].x - currentGreen[0].x < -(chairSize / 10)){
+				d = left;
+				return d;
+			}
+			//rotate to the left if the chair is facing southeast
+			if(currentRed[0].x - currentGreen[0].x > (chairSize / 10)){
+				d = right;
+				return d;
+			}
 		}
-		//chair is rotated to the right. Rotate it to the right
-		else if (currentRed[0].x - originRed[0].x > 0){
-			d = right;
-			return d;
+	}
+	//all 4 points are found
+	else if (numPoints == 4) {
+		avgX = (currentRed[0].x + currentRed[1].x + currentGreen[0].x + currentGreen[1].x) / 4;
+		chairSize = 0;
+		//find the maximum distance between all points as an approximation to the chair size
+		for (int i = 0; i < 2; i++) {
+			for int j = 0; j < 2; j++){
+				chairSize = max(chairSize, abs(currentRed[i].x - currentGreen[j].x));
+			}
+		}
+		relativeX = avgX - originAvgX;
+		int avgRedX = (currentRed[0].x + currentRed[1].x) / 2;
+		int avgGreenX = (currentGreen[0].x + currentGreen[1].x) / 2;
+		int avgRedY = (currentRed[0].y + currentRed[1].y) / 2;
+		int avgGreenY = (currentGreen[0].y + currentGreen[1].y) / 2;
+
+		if (abs(relativeX) > chairSize/10) {
+			//if the chair is on the left side and hasn't rotated fully, rotate it to the left
+			if (relativeX < 0) {
+				if (abs(avgRedY - avgGreenY) < (chairSize / 20) && (avgRedX - avgGreenX) > 0) {
+					d = straight;
+				}
+				else {
+					d = left;
+					return d;
+				}
+			}
+			//if the chair is on the right side and hasn't rotated fully, rotate it to the right
+			else {
+				if (abs(avgRedY - avgGreenY) > (chairSize / 20) && (avgRedX - avgGreenX) < 0) {
+					d = straight;
+				}
+				else {
+					d = right;
+					return d;
+				}
+			}
+		}
+		//If chair is in the middle of the camera
+		else {
+			//If chair facing camera directly
+			if (abs(avgRedX - avgGreenX) < chairSize / 10) {
+				d = straight;
+				return d;
+			}
+			else if (avgRedX > avgGreenX) {
+				d = right;
+				return d;
+			}
+			else {
+				d = left;
+				return d;
+			}
+
 		}
 	}
-	//if the chair is towards the centre, move it straight until it matches the origin y position
-	if (abs(currentRed[0].y - originRed[0].y) > 100){
-		d = straight;
-		return d;
-	}
+
 	//return "still" as default
 	return d;
+}
 
 void sqlStatement(time_t timeIn, int sessionID, char* query){
 	char sql[100] = "INSERT INTO information VALUES (";
@@ -226,20 +379,46 @@ int main(int argc, char **argv) {
 			    	cap >> origImg;
 			    }
 			    //do processing with respect to base center points and new center points
-			    /*
+			    
 			    bool notAtOrigin = true;
 			    while (notAtOrigin){
 			    	cap >> origImg;
 			    	vector<Point> newCenterPoints_RED = processImage(origImg,160,100,100,179,255,255);
 			    	vector<Point> newCenterPoints_GREEN = processImage(origImg,45,100,100,90,255,255);
 			    	//move chair x,y directions to origin (exit if at origin, change notAtOrigin = false)
-			    	notAtOrigin = pathToOrigin(baseCenterPoints_RED, baseCenterPoints_GREEN, newCenterPoints_RED, newCenterPoints_GREEN);
+					Direction dir;
+					dir = pathToOrigin(baseCenterPoints_RED, baseCenterPoints_GREEN, newCenterPoints_RED, newCenterPoints_GREEN);
 					//repeat till at origin (+/- few pixels of error)
+					sendString(dir);
 			    }
-			    */
+			    
 			}		
 		}
 	}
+
+	void sendString(Direction dir) {
+		string send;
+
+		//SF-255-F-255X
+		//S: Start,   F/B: Forward/Backward, 0-255: for power, X: end string
+
+		switch (dir) {
+			case straight:
+				send = "SF-200-F-200X";
+				break;
+			case left:
+				send = "SB-200-F-200X";
+				break;
+			case right:
+				send = "SF-200-B-200X";
+				break;
+			default:
+				send = "SF-0-F-0X";
+				break;
+		}
+		//NEED TO SEND STRING VIA BLUETOOTH
+	}
+
 	sqlite3_close(db);
 	return 0;
 }
