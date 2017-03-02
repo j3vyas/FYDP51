@@ -16,6 +16,13 @@ using namespace cv;
 enum Direction { left, right, straight, still };
 Direction d = left
 
+void send_motor_commands(string command){
+	string s = "Python bluetooth_test.py ";
+	s += command;
+	system(s.c_str());
+	return;
+}
+
 vector<Point> processImage(Mat bgr_image, int low1, int low2, int low3, int high1, int high2, int high3){
 	// Show the original images
 	namedWindow("Original Image", WINDOW_NORMAL);
