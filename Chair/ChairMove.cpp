@@ -1,6 +1,8 @@
 #include "ChairMove.h"
 
 #include <string>
+#include <iostream>
+#include <sstream>
 
 using namespace std;
 
@@ -24,9 +26,10 @@ void ChairMove::moveStop() {
 	send_motor_command("SF-0-F-0X");
 }
 
-void send_motor_command(string command) {
+void ChairMove::send_motor_command(std::string command) {
 	string s = "Python bluetooth_test.py ";
 	s += command;
+	cout << command;
 	system(s.c_str());
 	return;
 }

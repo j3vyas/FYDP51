@@ -10,13 +10,14 @@ using namespace std;
  *  Create buffer location
  */
 
-ChairPath::ChairPath(ChairMove chairMove, ChairPosition basePosition) {
-	this->chairMove = chairMove;
-	this->basePosition = basePosition;
-	this->prevPos = basePosition;
+ChairPath::ChairPath(ChairMove chairMove, ChairPosition basePosition):
+	chairMove(chairMove),
+	basePosition(basePosition),
+	prevPos(basePosition),
+	requireStop(true),
+	chairStage(0)
+{
 	createBufferPosition(basePosition);
-	requireStop = true;
-	isFirstStage = true;
 }
 
 /* 
@@ -24,6 +25,20 @@ ChairPath::ChairPath(ChairMove chairMove, ChairPosition basePosition) {
  */
 void ChairPath::createBufferPosition(ChairPosition basePosition) {
 	ChairPosition bufferPositionInit = ChairPosition();
+	double dirX = basePosition.getDirection().x;
+	double dirY = basePosition.getDirection().y;
+
+	double a = sqrt(1 / (dirX*dirX + dirY*dirY));
+
+	dirX = dirX*a;
+	dirY = dirY*a;
+
+	bufferPositionInit.setPosition(
+		ChairCoord(basePosition.getPosition().x - dirX*BUFF_DIST_MULT,
+			basePosition.getPosition().y - dirY*BUFF_DIST_MULT)
+	);
+
+	bufferPositionInit.setDirection(ChairCoord(dirX, dirY));
 
 	this->bufferPosition = bufferPositionInit;
 }
@@ -49,13 +64,13 @@ void ChairPath::moveChair(ChairPosition currentPos) {
 }
 
 void ChairPath::moveChairPhase(ChairPosition currentPos) {
-	if(isFirstStage) {
+	if(chairStage == 1) {
 		//Move to bufferPos
 		//If at destination
 		if (atDestination(currentPos.getPosition(), 
 			bufferPosition.getPosition())) {
 
-			isFirstStage = false;
+			chairStage = 2;
 			requireStop = true;
 		}
 		//If not at direction, change to direction
@@ -80,12 +95,13 @@ void ChairPath::moveChairPhase(ChairPosition currentPos) {
 			}
 		}
 	}
-	else {
+	else if (chairStage == 2) {
 		//Move to basePos
 		if (atDestination(currentPos.getPosition(), 
 			basePosition.getPosition())) {
 			//At position, stop
 			requireStop = true;
+			chairStage = 0;
 		}
 		else {
 			double diffRad = atDirection(currentPos.getDirection(),
@@ -105,6 +121,12 @@ void ChairPath::moveChairPhase(ChairPosition currentPos) {
 					chairMove.turnRight();
 				}
 			}
+		}
+	}
+	else if (chairStage == 0) {
+		if (!atDestination(currentPos.getPosition(),
+			basePosition.getPosition())) {
+			chairStage = 1;
 		}
 	}
 }

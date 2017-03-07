@@ -7,13 +7,14 @@
 
 using namespace std;
     
-ChairProcessor::ChairProcessor(ChairFrame baseFrame) {
-    this->baseFrame = baseFrame;
-    this->mappedBaseFrame = ChairMapping::mapFrame(baseFrame);
-	this->basePosition = ChairMapping::mapPosition(mappedBaseFrame);
-	this->chairMove = ChairMove();
-    this->chairMap = ChairMap(mappedBaseFrame);
-	this->chairPath = ChairPath(chairMove, basePosition);
+ChairProcessor::ChairProcessor(ChairFrame baseFrameArg):
+    baseFrame(baseFrameArg),
+    mappedBaseFrame(ChairMapping::mapFrame(baseFrame)),
+	basePosition(ChairMapping::mapPosition(mappedBaseFrame)),
+	chairMove(ChairMove()),
+    chairMap(ChairMap(mappedBaseFrame)),
+	chairPath(ChairPath(chairMove, basePosition))
+{
 }
     
 void ChairProcessor::processCurrentFrame(ChairFrame currentFrame) {

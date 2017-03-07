@@ -4,19 +4,21 @@
 #include "ChairMap.h"
 #include "ChairFrame.h"
 #include "ChairPosition.h"
+#include "ChairMove.h"
+#include "ChairPath.h"
 
 class ChairProcessor {
     
 	public: 
-		ChairProcessor::ChairProcessor(ChairFrame baseFrame);
+		ChairProcessor::ChairProcessor(ChairFrame baseFrameArg);
 		void processCurrentFrame(ChairFrame currentFrame);
 
 	private: 
 		ChairFrame baseFrame;
 		ChairFrame mappedBaseFrame;
 		ChairPosition basePosition;
-		ChairMap chairMap;
 		ChairMove chairMove;
+		ChairMap chairMap;
 		ChairPath chairPath;
 
 };

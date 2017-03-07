@@ -17,9 +17,11 @@ class ChairPath {
 
 		const double RAD_THRESHOLD = 0.0872665; //0.0872665 = 5deg
 
+		const double BUFF_DIST_MULT = 20;
+
 		bool requireStop;
 
-		bool isFirstStage;
+		int chairStage;
 
 		ChairMove chairMove;
 

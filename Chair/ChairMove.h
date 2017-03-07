@@ -1,6 +1,8 @@
 #ifndef CHAIRMOVE
 #define CHAIRMOVE
 
+#include <string>
+
 class ChairMove {
 	public:
 		ChairMove::ChairMove();
@@ -16,7 +18,7 @@ class ChairMove {
 	private:
 		static const int BASE_SPEED = 1;	//Change this to change base speed
 
-		void send_motor_command(string command);
+		void send_motor_command(std::string command);
 };
 
 #endif

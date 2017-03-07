@@ -23,7 +23,9 @@ using namespace std;
  */
 ChairFrame ChairMapping::mapFrame(ChairFrame chairFrame) {
     ChairFrame mappedFrame = ChairFrame();
-        
+    
+	chairFrame = missingHandler(chairFrame);
+
 	mappedFrame.setBl(mapSingleCoord(chairFrame.getBl()));
 	mappedFrame.setBr(mapSingleCoord(chairFrame.getBr()));
 	mappedFrame.setFr(mapSingleCoord(chairFrame.getFr()));
@@ -38,6 +40,77 @@ ChairFrame ChairMapping::mapFrame(ChairFrame chairFrame) {
 
 	cout << chairMapString << endl;
     return mappedFrame;
+}
+
+ChairFrame ChairMapping::missingHandler(ChairFrame chairFrame) {
+	int legsMissing = 0;
+	ChairCoord chairCoords[] = { 
+		chairFrame.getBl(),
+		chairFrame.getBr(),
+		chairFrame.getFl(),
+		chairFrame.getFr()
+	};
+	for (int i = 0; i < 4; i++) {
+		if (chairCoords[i].missing) {
+			legsMissing++;
+		}
+	}
+
+	if (legsMissing == 0) {
+		return chairFrame;
+	}
+	else if (legsMissing == 1) {
+		if (chairCoords[0].missing) {
+			chairFrame.setBl(ChairCoord(
+				chairFrame.getBr().x + chairFrame.getFl().x - chairFrame.getFr().x,
+				chairFrame.getBr().y + chairFrame.getFl().y - chairFrame.getFr().y
+			));
+		}
+		else if (chairCoords[1].missing) {
+			chairFrame.setBr(ChairCoord(
+				chairFrame.getBl().x + chairFrame.getFr().x - chairFrame.getFl().x,
+				chairFrame.getBl().y + chairFrame.getFr().y - chairFrame.getFl().y
+			));
+		}
+		else if (chairCoords[2].missing) {
+			chairFrame.setBl(ChairCoord(
+				chairFrame.getFr().x + chairFrame.getBl().x - chairFrame.getBr().x,
+				chairFrame.getFr().y + chairFrame.getBl().y - chairFrame.getBr().y
+			));
+		}
+		else if (chairCoords[3].missing) {
+			chairFrame.setFr(ChairCoord(
+				chairFrame.getFl().x + chairFrame.getBr().x - chairFrame.getBl().x,
+				chairFrame.getFl().y + chairFrame.getBr().y - chairFrame.getBl().y
+			));
+		}
+	}
+	else if (legsMissing == 2) {
+		double xTemp, yTemp;
+		for (int i = 0; i < 4; i++) {
+			xTemp += chairCoords[i].x;
+			yTemp += chairCoords[i].y;
+		}
+
+		for (int i = 0; i < 4; i++) {
+			if (chairCoords[i].missing) {
+				if (i == 0) {
+					chairFrame.setBl(ChairCoord(xTemp/2, yTemp/2));
+				}
+				else if (i == 1) {
+					chairFrame.setBr(ChairCoord(xTemp/2, yTemp/2));
+				}
+				else if (i == 2) {
+					chairFrame.setFl(ChairCoord(xTemp/2, yTemp/2));
+				}
+				else {
+					chairFrame.setFr(ChairCoord(xTemp/2, yTemp/2));
+				}
+			}
+		}
+	}
+
+	return chairFrame;
 }
 
 /* 
