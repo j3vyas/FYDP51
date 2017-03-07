@@ -86,7 +86,8 @@ ChairFrame ChairMapping::missingHandler(ChairFrame chairFrame) {
 		}
 	}
 	else if (legsMissing == 2) {
-		double xTemp, yTemp;
+		double xTemp = 0;
+		double yTemp = 0;
 		for (int i = 0; i < 4; i++) {
 			xTemp += chairCoords[i].x;
 			yTemp += chairCoords[i].y;
