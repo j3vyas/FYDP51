@@ -17,7 +17,10 @@
 #include <iostream>
 
 using namespace std;
-    
+
+/*
+ *  Convert image coordinates to map coordinates
+ */
 ChairFrame ChairMapping::mapFrame(ChairFrame chairFrame) {
     ChairFrame mappedFrame = ChairFrame();
         
@@ -36,7 +39,10 @@ ChairFrame ChairMapping::mapFrame(ChairFrame chairFrame) {
 	cout << chairMapString << endl;
     return mappedFrame;
 }
-    
+
+/* 
+ *  Convert map coordinates to single coordinate vector
+ */
 ChairPosition ChairMapping::mapPosition(ChairFrame chairFrame) {
     ChairPosition chairPosition = ChairPosition();
         

@@ -1,37 +1,32 @@
 #include "ChairMove.h"
-    
+
+#include <string>
+
+using namespace std;
+
 ChairMove::ChairMove() {
     //Requrire Bluetooth Connection
 }
     
 void ChairMove::turnRight() {
-    moveSide(BASE_SPEED, -BASE_SPEED);
+	send_motor_command("SF-200-B-200X");
 }
     
 void ChairMove::turnLeft() {
-    moveSide(-BASE_SPEED, BASE_SPEED);
+	send_motor_command("SB-200-F-200X");
 }
 
 void ChairMove::moveForward() {
-    moveAll(BASE_SPEED);
-}
-    
-void ChairMove::moveBack() {
-    moveAll(-BASE_SPEED);
+	send_motor_command("SF-200-F-200X");
 }
     
 void ChairMove::moveStop() {
-    moveAll(0);
+	send_motor_command("SF-0-F-0X");
 }
-    
-void ChairMove::moveAll(int allWheels) {
-    moveSide(allWheels, allWheels);
-}
-    
-void ChairMove::moveSide(int leftWheels, int rightWheels) {
-    moveIndividual(leftWheels, leftWheels, rightWheels, rightWheels);
-}
-    
-void ChairMove::moveIndividual(int leftFront, int leftBack, int rightFront, int rightBack) {
-    //Call some function to relay via Bluetooth
+
+void send_motor_command(string command) {
+	string s = "Python bluetooth_test.py ";
+	s += command;
+	system(s.c_str());
+	return;
 }

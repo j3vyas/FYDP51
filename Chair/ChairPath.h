@@ -7,22 +7,35 @@
 
 class ChairPath {
 	public: 
-		ChairPath::ChairPath(ChairMove chairMove);
+		ChairPath::ChairPath(ChairMove chairMove, ChairPosition basePosition);
 
-		void moveChair(ChairPosition currentPos, ChairPosition destination);
+		void moveChair(ChairPosition currentPos);
 
 	private:
-		bool requireStop;
 
 		const double DISTANCE_THRESHOLD = 5;
 
+		const double RAD_THRESHOLD = 0.0872665; //0.0872665 = 5deg
+
+		bool requireStop;
+
+		bool isFirstStage;
+
 		ChairMove chairMove;
+
+		ChairPosition prevPos;
+
+		ChairPosition basePosition;
+
+		ChairPosition bufferPosition;
+
+		void createBufferPosition(ChairPosition basePosition);
     
-		bool atDestination(ChairPosition currentPos, ChairPosition destination);
-    
-		bool correctDirection(ChairPosition currentPos, ChairPosition destination, bool turnToDest);
-    
-		void nextDestination();
+		bool atDestination(ChairCoord current, ChairCoord dest);
+		
+		double atDirection(ChairCoord current, ChairCoord dest);
+
+		void moveChairPhase(ChairPosition currentPos);
 };
 
 #endif

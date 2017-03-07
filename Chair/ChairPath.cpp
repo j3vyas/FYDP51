@@ -2,62 +2,127 @@
 
 using namespace std;
 
-ChairPath::ChairPath(ChairMove chairMove) :
-	requireStop(true) {
+
+/*  
+ *  Create new instance
+ *  Pass reference to ChairMove, and Bluetooth
+ *  Create base location
+ *  Create buffer location
+ */
+
+ChairPath::ChairPath(ChairMove chairMove, ChairPosition basePosition) {
 	this->chairMove = chairMove;
+	this->basePosition = basePosition;
+	this->prevPos = basePosition;
+	createBufferPosition(basePosition);
+	requireStop = true;
+	isFirstStage = true;
 }
-    
-    /*  Inputs destination and current postion
-     *  Checks if direction needs to change, if it does, stop
-     *
-     */
-void ChairPath::moveChair(ChairPosition currentPos, ChairPosition destination) {
-    if (requireStop) {
-        requireStop = false;
-        chairMove.moveStop();
-    } else {
-        if (atDestination(currentPos, destination)) {
-            if (correctDirection(currentPos, destination, false)) {
-                nextDestination();
-            }
+
+/* 
+ *  Sets buffer position before the base position
+ */
+void ChairPath::createBufferPosition(ChairPosition basePosition) {
+	ChairPosition bufferPositionInit = ChairPosition();
+
+	this->bufferPosition = bufferPositionInit;
+}
+
+/*  
+ *  Inputs current postion
+ */
+void ChairPath::moveChair(ChairPosition currentPos) {
+	//If stop flag on
+	if (requireStop) {
+		//If not at prevPos, continue stopping, otherwise
+		if (atDestination(currentPos.getPosition(),
+			prevPos.getPosition())) {
+		
+			requireStop = false;
+		}
+		chairMove.moveStop();
+    } 
+	else {
+		moveChairPhase(currentPos);
+    }
+	prevPos = currentPos;
+}
+
+void ChairPath::moveChairPhase(ChairPosition currentPos) {
+	if(isFirstStage) {
+		//Move to bufferPos
+		//If at destination
+		if (atDestination(currentPos.getPosition(), 
+			bufferPosition.getPosition())) {
+
+			isFirstStage = false;
+			requireStop = true;
+		}
+		//If not at direction, change to direction
+		else {
+			double diffRad = atDirection(currentPos.getDirection(),
+				bufferPosition.getDirection());
+
+			if (abs(diffRad) < RAD_THRESHOLD) {
+				//Forward
+				chairMove.moveForward();
+			} 
 			else {
 				//Turn to direction
+				if (diffRad > 0) {
+					//Left
+					chairMove.turnLeft();
+				}
+				else {
+					//Right
+					chairMove.turnRight();
+				}
 			}
+		}
+	}
+	else {
+		//Move to basePos
+		if (atDestination(currentPos.getPosition(), 
+			basePosition.getPosition())) {
+			//At position, stop
+			requireStop = true;
 		}
 		else {
-			if (correctDirection(currentPos, destination, true)) {
-				//Move forward
+			double diffRad = atDirection(currentPos.getDirection(),
+				basePosition.getDirection());
+
+			if (abs(diffRad) < RAD_THRESHOLD) {
+				chairMove.moveForward();
 			}
 			else {
-				//Turn to face the destination
+				//Turn to direction
+				if (diffRad > 0) {
+					//Left
+					chairMove.turnLeft();
+				}
+				else {
+					//Right
+					chairMove.turnRight();
+				}
 			}
 		}
-    }
+	}
 }
     
-bool ChairPath::atDestination(ChairPosition currentPos, ChairPosition destination) {
+bool ChairPath::atDestination(ChairCoord current, ChairCoord dest) {
 
-	double xdiff = currentPos.getPosition().x - destination.getPosition().x;
-	double ydiff = currentPos.getPosition().y - destination.getPosition().y;
+	double xdiff = current.x - dest.x;
+	double ydiff = current.y - dest.y;
 
 	double distance = sqrt(pow(xdiff, 2) + pow(ydiff, 2));
     
     return (distance < DISTANCE_THRESHOLD);
 }
-    
-bool ChairPath::correctDirection(ChairPosition currentPos, ChairPosition destination, bool turnToDest) {
-        
-    //If chair is facing correct direction
-	if (turnToDest) {
 
-	}
-	else {
+double ChairPath::atDirection(ChairCoord current, ChairCoord dest) {
 
-	}
-        
-    return true;
-}
-    
-void ChairPath::nextDestination() {
-        
+	double currentRad = atan2(current.y, current.x);
+	double destRad = atan2(dest.y, dest.x);
+
+	return destRad - currentRad;
 }

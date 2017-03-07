@@ -3,6 +3,7 @@
 
 #include "ChairMap.h"
 #include "ChairFrame.h"
+#include "ChairPosition.h"
 
 class ChairProcessor {
     
@@ -13,7 +14,10 @@ class ChairProcessor {
 	private: 
 		ChairFrame baseFrame;
 		ChairFrame mappedBaseFrame;
+		ChairPosition basePosition;
 		ChairMap chairMap;
+		ChairMove chairMove;
+		ChairPath chairPath;
 
 };
 
