@@ -1,0 +1,5 @@
+color reference hsv
+yellow: (30, 64, 128)
+purple: (129, 43, 71)
+red:    (169, 97, 128)
+green:  (60, 84, 61)
