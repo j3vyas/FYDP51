@@ -11,157 +11,134 @@
 #include "ChairProcessor.h"
 #include <thread>
 #include <chrono>
+#include <Object.h>
+using namespace cv;
+using namespace std;
 
-cv::Scalar hsv_red_min_lower(0, 80, 20);
-cv::Scalar hsv_red_max_lower(10, 120, 140);
-cv::Scalar hsv_red_min_upper(160, 80, 20);
-cv::Scalar hsv_red_max_upper(179, 120, 140);
-cv::Scalar hsv_purple_min(110, 20, 40);
-cv::Scalar hsv_purple_max(140, 70, 90);
-cv::Scalar hsv_green_min(50, 60, 40);
-cv::Scalar hsv_green_max(80, 190, 90);
-cv::Scalar hsv_yellow_min(10, 100, 40);
-cv::Scalar hsv_yellow_max(30, 255, 100);
-cv::Scalar bgr_red(0, 0, 255);
-cv::Scalar bgr_purple(255, 0, 255);
-cv::Scalar bgr_green(0, 255, 0);
-cv::Scalar bgr_yellow(0, 255, 255);
+int redLowH;
+int redHighH;
+int redLowS;
+int redHighS;
+int redLowV;
+int redHighV;
 
-	int redLowH = hsv_red_min_upper.val[0];
-	int redHighH = hsv_red_max_upper.val[0];
-	int redLowS = hsv_red_min_upper.val[1];
-	int redHighS = hsv_red_max_upper.val[1];
-	int redLowV = hsv_red_min_upper.val[2];
-	int redHighV = hsv_red_max_upper.val[2];
+int yellowLowH;
+int yellowHighH;
+int yellowLowS;
+int yellowHighS;
+int yellowLowV;
+int yellowHighV;
 
-	int yellowLowH = hsv_yellow_min.val[0];
-	int yellowHighH = hsv_yellow_max.val[0];
-	int yellowLowS = hsv_yellow_min.val[1];
-	int yellowHighS = hsv_yellow_max.val[1];
-	int yellowLowV = hsv_yellow_min.val[2];
-	int yellowHighV = hsv_yellow_max.val[2];
+int greenLowH;
+int greenHighH;
+int greenLowS;
+int greenHighS;
+int greenLowV;
+int greenHighV;
 
-	int greenLowH = hsv_green_min.val[0];
-	int greenHighH = hsv_green_max.val[0];
-	int greenLowS = hsv_green_min.val[1];
-	int greenHighS = hsv_green_max.val[1];
-	int greenLowV = hsv_green_min.val[2];
-	int greenHighV = hsv_green_max.val[2];
+int blueLowH;
+int blueHighH;
+int blueLowS;
+int blueHighS;
+int blueLowV;
+int blueHighV;
 
-	int purpleLowH = hsv_purple_min.val[0];
-	int purpleHighH = hsv_purple_max.val[0];
-	int purpleLowS = hsv_purple_min.val[1];
-	int purpleHighS = hsv_purple_max.val[1];
-	int purpleLowV = hsv_purple_min.val[2];
-	int purpleHighV = hsv_purple_max.val[2];
-
-void drawObjects(std::vector<cv::RotatedRect> boundingBox, std::vector<cv::Point> centrePoints, cv::Mat &drawing, cv::Scalar colour){
+void drawObjects(vector<RotatedRect> boundingBox, vector<Point> centrePoints, Mat &drawMat, Scalar colour){
 	// draw the rotated rect and centre point
 	for (int i = 0; i < boundingBox.size(); i++){
-		cv::Point2f corners[4];
+		Point2f corners[4];
 		boundingBox[i].points(corners);
-		cv::line(drawing, corners[0], corners[1], colour);
-		cv::line(drawing, corners[1], corners[2], colour);
-		cv::line(drawing, corners[2], corners[3], colour);
-		cv::line(drawing, corners[3], corners[0], colour);
-		cv::circle(drawing, centrePoints[i], 3, colour, -1);
+		line(drawMat, corners[0], corners[1], colour);
+		line(drawMat, corners[1], corners[2], colour);
+		line(drawMat, corners[2], corners[3], colour);
+		line(drawMat, corners[3], corners[0], colour);
+		circle(drawMat, centrePoints[i], 3, colour, -1);
 	}
 }
 
-void trackObjects(cv::Mat &filteredImg, cv::Mat &drawing, cv::Scalar colour, cv::Point &position){
-	std::vector<std::vector<cv::Point> > contours;
-	std::vector<cv::Vec4i> hierarchy;
-	cv::findContours(filteredImg, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+void trackObjects(Mat &filteredImg, Mat &drawMat, Object &obj){
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	findContours(filteredImg, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
-	std::vector<cv::RotatedRect> boundingBox;
-	std::vector<cv::Point> centrePoints;
+	vector<RotatedRect> boundingBox;
+	vector<Point> centrePoints;
 	double maxArea = 0;
 	for (int i = 0; i < contours.size(); i++){
-		cv::RotatedRect rect = cv::minAreaRect(contours[i]);
+		RotatedRect rect = minAreaRect(contours[i]);
 
-		if (cv::contourArea(contours[i]) >= 300){
+		if (contourArea(contours[i]) >= 300){
 			boundingBox.push_back(rect);
 			centrePoints.push_back(rect.center);
-			if (cv::contourArea(contours[i]) > maxArea){
-				maxArea = cv::contourArea(contours[i]);
-				position = rect.center;
+			if (contourArea(contours[i]) > maxArea){
+				maxArea = contourArea(contours[i]);
+				obj.setPoint(rect.center);
 			}
 		}
 	}
-	drawObjects(boundingBox, centrePoints, drawing, colour);
+	drawObjects(boundingBox, centrePoints, drawMat, obj.getColourBgr());
 }
 
-void morphImg(cv::Mat &img){
+void morphImg(Mat &img){
 	// use erosion and dilation to remove noise
-	cv::Mat erodeElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
-	cv::Mat dilateElement = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(10, 10));
+	Mat erodeElement = getStructuringElement(MORPH_RECT, Size(3, 3));
+	Mat dilateElement = getStructuringElement(MORPH_RECT, Size(10, 10));
 
-	cv::erode(img, img, erodeElement);
-	cv::erode(img, img, erodeElement);
+	erode(img, img, erodeElement);
+	erode(img, img, erodeElement);
 
-	cv::dilate(img, img, dilateElement);
-	cv::dilate(img, img, dilateElement);
+	dilate(img, img, dilateElement);
+	dilate(img, img, dilateElement);
 }
 
-void getChairPosition(cv::Mat origImg, cv::Point &fl, cv::Point &fr, cv::Point &bl, cv::Point &br){
-	// convert input image to HSV
-	cv::Mat hsvImg;
-	cv::medianBlur(origImg, origImg, 25);
-	cv::cvtColor(origImg, hsvImg, cv::COLOR_BGR2HSV);
+void getObjects(Mat hsvImg, Object &obj, Mat &points){
+	// threshold matrix
+	Mat threshold;
 
-	// threshold the HSV image, keep only the red pixels
-	cv::Mat threshold;
-	cv::Mat points = cv::Mat::zeros(hsvImg.size(), CV_8UC3);
-
-	// find red
-	//cv::Mat lower_red_hsv_range;
-	//cv::Mat upper_red_hsv_range;
-	//cv::inRange(hsvImg, hsv_red_min_lower, hsv_red_max_lower, lower_red_hsv_range);
-	cv::inRange(hsvImg, cv::Scalar(redLowH, redLowS, redLowV), cv::Scalar(redHighH, redHighS, redHighV), threshold);
-	//cv::addWeighted(lower_red_hsv_range, 1.0, upper_red_hsv_range, 1.0, 0.0, threshold);
+    // refresh the threshold range
+    setHsvRange(obj);
+    
+	// threshold the image with hsv range
+	inRange(hsvImg, obj.getHsvMin(), obj.getHsvMax(), threshold);
+    
+    // use morphological transformations to further remove noise
 	morphImg(threshold);
-	cv::Point redPos = cv::Point(-1, -1);
-	trackObjects(threshold, points, bgr_red, redPos);
-
-	// find purple
-	cv::cvtColor(origImg, hsvImg, cv::COLOR_BGR2HSV);
-	cv::inRange(hsvImg, cv::Scalar(purpleLowH, purpleLowS, purpleLowV), cv::Scalar(purpleHighH, purpleHighS, purpleHighV), threshold);
-	morphImg(threshold);
-	cv::Point purplePos = cv::Point(-1, -1);
-	trackObjects(threshold, points, bgr_purple, purplePos);
-
-	// find green
-	cv::cvtColor(origImg, hsvImg, cv::COLOR_BGR2HSV);
-	cv::inRange(hsvImg, cv::Scalar(greenLowH, greenLowS, greenLowV), cv::Scalar(greenHighH, greenHighS, greenHighV), threshold);
-	morphImg(threshold);
-	cv::Point greenPos = cv::Point(-1, -1);
-	trackObjects(threshold, points, bgr_green, greenPos);
-
-	// find yellow
-	cv::cvtColor(origImg, hsvImg, cv::COLOR_BGR2HSV);
-	cv::inRange(hsvImg, cv::Scalar(yellowLowH, yellowLowS, yellowLowV), cv::Scalar(yellowHighH, yellowHighS, yellowHighV), threshold);
-	cv::Point yellowPos = cv::Point(-1, -1);
-	trackObjects(threshold, points, bgr_yellow, yellowPos);
-
-	// display images
-	cv::imshow("original", origImg);
-	//cv::imshow("points", points);
-
-	fl = greenPos;
-	fr = purplePos;
-	bl = redPos;
-	br = yellowPos;
+    
+    // initialize the point to (-1, -1)
+	obj.setPoint(Point(-1, -1));
+    
+    // finally track the objects
+	trackObjects(threshold, points, obj);
 }
 
-bool readCapture(cv::VideoCapture cap, cv::Mat img){
+void setHsvRange(Object &obj){
+    if(obj.getColour == "green"){
+        green.setHsvMin(Scalar(greenLowH, greenLowS, greenLowV));
+        green.setHsvMax(Scalar(greenHighH, greenHighS, greenHighV));
+    }
+    else if(obj.getColour == "blue"){
+        blue.setHsvMin(Scalar(blueLowH, blueLowS, blueLowV));
+        blue.setHsvMax(Scalar(blueHighH, blueHighS, blueHighV));
+    }
+    else if(obj.getColour == "red"){
+        red.setHsvMin(Scalar(redLowH, redLowS, redLowV));
+        red.setHsvMax(Scalar(redHighH, redHighS, redHighV));
+    } 
+    else{
+        yellow.setHsvMin(Scalar(yellowLowH, yellowLowS, yellowLowV));
+        yellow.setHsvMax(Scalar(yellowHighH, yellowHighS, yellowHighV));
+    }
+}
+
+bool readCapture(VideoCapture cap, Mat img){
 	bool success = cap.read(img);
 	if (!success){
-		std::cout << "read unsuccessful" << std::endl;
+		cout << "read unsuccessful" << endl;
 	}
 	return success;
 }
 
-ChairFrame getChairFrame(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4){
+ChairFrame getChairFrame(Point p1, Point p2, Point p3, Point p4){
 	ChairCoord fl = ChairCoord(p1.x, p1.y);
 	ChairCoord fr = ChairCoord(p2.x, p2.y);
 	ChairCoord bl = ChairCoord(p3.x, p3.y);
@@ -169,7 +146,7 @@ ChairFrame getChairFrame(cv::Point p1, cv::Point p2, cv::Point p3, cv::Point p4)
 	return ChairFrame(fl, fr, bl, br);
 }
 
-int getNumPointsFound(cv::Point &p1, cv::Point &p2, cv::Point &p3, cv::Point &p4){
+int getNumPointsFound(Point &p1, Point &p2, Point &p3, Point &p4){
 	int numPointsFound = 0;
 	if (p1.x != -1 && p1.y != -1){
 		numPointsFound++;
@@ -202,90 +179,154 @@ int getNumPointsFound(cv::Point &p1, cv::Point &p2, cv::Point &p3, cv::Point &p4
 	return numPointsFound;
 }
 
-void drawMappedPoints(ChairFrame cf, cv::Mat &map){
+void drawMappedPoints(ChairFrame cf, Mat &map){
 	ChairCoord fl = cf.getFl();
 	ChairCoord fr = cf.getFr();
 	ChairCoord bl = cf.getBl();
 	ChairCoord br = cf.getBr();
-	std::cout << "(" << fl.x << "," << fl.y << ") " << "(" << fr.x << "," << fr.y << ") " << "(" << bl.x << "," << bl.y << ") " << "(" << br.x << "," << br.y << ")" << std::endl;
-	cv::Point p1 = cv::Point(map.rows / 2 + fl.x * 3, map.cols / 2 - fl.y * 3);
-	cv::Point p2 = cv::Point(map.rows / 2 + fr.x * 3, map.cols / 2 - fr.y * 3);
-	cv::Point p3 = cv::Point(map.rows / 2 + bl.x * 3, map.cols / 2 - bl.y * 3);
-	cv::Point p4 = cv::Point(map.rows / 2 + br.x * 3, map.cols / 2 - br.y * 3);
-	cv::circle(map, p1, 3, cv::Scalar(255, 255, 255), -1);
-	cv::circle(map, p2, 3, cv::Scalar(255, 255, 255), -1);
-	cv::circle(map, p3, 3, cv::Scalar(255, 255, 255), -1);
-	cv::circle(map, p4, 3, cv::Scalar(255, 255, 255), -1);
-	cv::putText(map, "fl", cv::Point(p1.x, p1.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, cv::Scalar::all(255), 2, 8);
-	cv::putText(map, "fr", cv::Point(p2.x, p2.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, cv::Scalar::all(255), 3, 8);
-	cv::putText(map, "bl", cv::Point(p3.x, p3.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, cv::Scalar::all(255), 3, 8);
-	cv::putText(map, "br", cv::Point(p4.x, p4.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, cv::Scalar::all(255), 3, 8);
+    cout << "mapped points:" << endl;
+	cout << "(" << fl.x << "," << fl.y << ") " << "(" << fr.x << "," << fr.y << ") " << "(" << bl.x << "," << bl.y << ") " << "(" << br.x << "," << br.y << ")" << endl;
+	Point p1 = Point(map.rows / 2 + fl.x * 3, map.cols / 2 - fl.y * 3);
+	Point p2 = Point(map.rows / 2 + fr.x * 3, map.cols / 2 - fr.y * 3);
+	Point p3 = Point(map.rows / 2 + bl.x * 3, map.cols / 2 - bl.y * 3);
+	Point p4 = Point(map.rows / 2 + br.x * 3, map.cols / 2 - br.y * 3);
+	circle(map, p1, 3, Scalar(255, 255, 255), -1);
+	circle(map, p2, 3, Scalar(255, 255, 255), -1);
+	circle(map, p3, 3, Scalar(255, 255, 255), -1);
+	circle(map, p4, 3, Scalar(255, 255, 255), -1);
+	putText(map, "fl", Point(p1.x, p1.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, Scalar::all(255), 2, 8);
+	putText(map, "fr", Point(p2.x, p2.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, Scalar::all(255), 3, 8);
+	putText(map, "bl", Point(p3.x, p3.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, Scalar::all(255), 3, 8);
+	putText(map, "br", Point(p4.x, p4.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, Scalar::all(255), 3, 8);
 }
 
-void createControls(){
-	cv::namedWindow("red", CV_WINDOW_AUTOSIZE);
-	cv::createTrackbar("LowH", "red", &redLowH, 179);
-	cv::createTrackbar("HighH", "red", &redHighH, 179);
-	cv::createTrackbar("LowS", "red", &redLowS, 255);
-	cv::createTrackbar("HighS", "red", &redHighS, 255);
-	cv::createTrackbar("LowV", "red", &redLowV, 255);
-	cv::createTrackbar("HighV", "red", &redHighV, 255);
+void createControls(Object green, Object blue, Object red, Object yellow){
 
-	cv::namedWindow("yellow", CV_WINDOW_AUTOSIZE);
-	cv::createTrackbar("LowH", "yellow", &yellowLowH, 179);
-	cv::createTrackbar("HighH", "yellow", &yellowHighH, 179);
-	cv::createTrackbar("LowS", "yellow", &yellowLowS, 255);
-	cv::createTrackbar("HighS", "yellow", &yellowHighS, 255);
-	cv::createTrackbar("LowV", "yellow", &yellowLowV, 255);
-	cv::createTrackbar("HighV", "yellow", &yellowHighV, 255);
+    //initialize control variables
+    Scalar redHsvMin = red.getHsvMin();
+    Scalar redHsvMax = red.getHsvMax();
+    redLowH = redHsvMin[0];
+    redHighH = redHsvMax[0];
+    redLowS = redHsvMin[1];
+    redHighS = redHsvMax[1];
+    redLowV = redHsvMin[2];
+    redHighV = redHsvMax[2];
 
-	cv::namedWindow("green", CV_WINDOW_AUTOSIZE);
-	cv::createTrackbar("LowH", "green", &greenLowH, 179);
-	cv::createTrackbar("HighH", "green", &greenHighH, 179);
-	cv::createTrackbar("LowS", "green", &greenLowS, 255);
-	cv::createTrackbar("HighS", "green", &greenHighS, 255);
-	cv::createTrackbar("LowV", "green", &greenLowV, 255);
-	cv::createTrackbar("HighV", "green", &greenHighV, 255);
+    Scalar blueHsvMin = blue.getHsvMin();
+    Scalar blueHsvMax = blue.getHsvMax();
+    blueLowH = blueHsvMin[0];
+    blueHighH = blueHsvMax[0];
+    blueLowS = blueHsvMin[1];
+    blueHighS = blueHsvMax[1];
+    blueLowV = blueHsvMin[2];
+    blueHighV = blueHsvMax[2];
+    
+    Scalar greenHsvMin = green.getHsvMin();
+    Scalar greenHsvMax = green.getHsvMax();
+    greenLowH = greenHsvMin[0];
+    greenHighH = greenHsvMax[0];
+    greenLowS = greenHsvMin[1];
+    greenHighS = greenHsvMax[1];
+    greenLowV = greenHsvMin[2];
+    greenHighV = greenHsvMax[2];
+    
+    Scalar yellowHsvMin = yellow.getHsvMin();
+    Scalar yellowHsvMax = yellow.getHsvMax();
+    yellowLowH = yellowHsvMin[0];
+    yellowHighH = yellowHsvMax[0];
+    yellowLowS = yellowHsvMin[1];
+    yellowHighS = yellowHsvMax[1];
+    yellowLowV = yellowHsvMin[2];
+    yellowHighV = yellowHsvMax[2];
+    
+    // create control windows
+	namedWindow("red", CV_WINDOW_AUTOSIZE);
+	createTrackbar("LowH", "red", &redLowH, 179);
+	createTrackbar("HighH", "red", &redHighH, 179);
+	createTrackbar("LowS", "red", &redLowS, 255);
+	createTrackbar("HighS", "red", &redHighS, 255);
+	createTrackbar("LowV", "red", &redLowV, 255);
+	createTrackbar("HighV", "red", &redHighV, 255);
 
-	cv::namedWindow("purple", CV_WINDOW_AUTOSIZE);
-	cv::createTrackbar("LowH", "purple", &purpleLowH, 179);
-	cv::createTrackbar("HighH", "purple", &purpleHighH, 179);
-	cv::createTrackbar("LowS", "purple", &purpleLowS, 255);
-	cv::createTrackbar("HighS", "purple", &purpleHighS, 255);
-	cv::createTrackbar("LowV", "purple", &purpleLowV, 255);
-	cv::createTrackbar("HighV", "purple", &purpleHighV, 255);
+	namedWindow("yellow", CV_WINDOW_AUTOSIZE);
+	createTrackbar("LowH", "yellow", &yellowLowH, 179);
+	createTrackbar("HighH", "yellow", &yellowHighH, 179);
+	createTrackbar("LowS", "yellow", &yellowLowS, 255);
+	createTrackbar("HighS", "yellow", &yellowHighS, 255);
+	createTrackbar("LowV", "yellow", &yellowLowV, 255);
+	createTrackbar("HighV", "yellow", &yellowHighV, 255);
+
+	namedWindow("green", CV_WINDOW_AUTOSIZE);
+	createTrackbar("LowH", "green", &greenLowH, 179);
+	createTrackbar("HighH", "green", &greenHighH, 179);
+	createTrackbar("LowS", "green", &greenLowS, 255);
+	createTrackbar("HighS", "green", &greenHighS, 255);
+	createTrackbar("LowV", "green", &greenLowV, 255);
+	createTrackbar("HighV", "green", &greenHighV, 255);
+
+	namedWindow("blue", CV_WINDOW_AUTOSIZE);
+	createTrackbar("LowH", "blue", &blueLowH, 179);
+	createTrackbar("HighH", "blue", &blueHighH, 179);
+	createTrackbar("LowS", "blue", &blueLowS, 255);
+	createTrackbar("HighS", "blue", &blueHighS, 255);
+	createTrackbar("LowV", "blue", &blueLowV, 255);
+	createTrackbar("HighV", "blue", &blueHighV, 255);
 }
 
 int main(int argc, char **argv) {
 
 	// exit if capture wasn't successful
 	// try capturing image from the webcam
-	cv::VideoCapture cap(0);
+	VideoCapture cap(0);
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 2000);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 2000);
 
 	if (!cap.isOpened()){
-		std::cout << "webcam not on" << std::endl;
+		cout << "webcam not on" << endl;
 		return -1;
 	}
 
-	std::string word;
-	std::cout << "Type \"start\" to capture the base frame" << std::endl;
+	string word;
+	cout << "Type \"start\" to capture the base frame" << endl;
 	while (word.compare("start") != 0){
-		std::getline(std::cin, word);
+		getline(cin, word);
 	}
-	std::cout << "Capturing base frame" << std::endl;
-
-	// create control windows
-	//createControls();
+	cout << "Capturing base frame" << endl;
 
 	// find the base frame with the initial image processing
-	cv::Mat origImg;
+	Mat origImg;
 	cap.read(origImg);
-
-	cv::Point greenPos, purplePos, redPos, yellowPos;
-	getChairPosition(origImg, greenPos, purplePos, redPos, yellowPos);
-	ChairFrame baseFrame = getChairFrame(greenPos, purplePos, redPos, yellowPos);
+    
+    // blur the image to get rid of noise
+	medianBlur(origImg, origImg, 25);
+    
+    // convert input image to HSV
+	Mat hsvImg;
+	cvtColor(origImg, hsvImg, COLOR_BGR2HSV);
+    
+    // get the base frame
+	Object green = Object("green");
+    Object blue = Object("blue");
+    Object red = Object("red");
+    Object yellow = Object("yellow");
+    
+    // create control windows
+	createControls(green, blue, red, yellow);
+    
+    // matrix to draw points on
+    Mat points = Mat::zeros(hsvImg.size(), CV_8UC3);
+    
+    // get objects with the corresponding colour
+    thread t1(getObjects, hsvImg, green, points);
+    thread t2(getObjects, hsvImg, blue, points);
+    thread t3(getObjects, hsvImg, red, points);
+    thread t4(getObjects, hsvImg, yellow, points);
+    t1.join():
+    t2.join();
+    t3.join();
+    t4.join();
+    
+	ChairFrame baseFrame = getChairFrame(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
 	ChairProcessor cp = ChairProcessor(baseFrame);
 
 	// capture loop
@@ -295,32 +336,47 @@ int main(int argc, char **argv) {
 		if (!readCapture(cap, origImg)){
 			break;
 		}
+        
+        medianBlur(origImg, origImg, 25);
+        cvtColor(origImg, hsvImg, COLOR_BGR2HSV);
+        
+        // reset points
+		green.setPoint(Point(-1, -1));
+		blue.setPoint(Point(-1, -1));
+		red.setPoint(Point(-1, -1));
+		yellow.setPoint(Point(-1, -1));
+        
+        // matrix to draw points on
+        points = Mat::zeros(hsvImg.size(), CV_8UC3);
+        thread t1(getObjects, hsvImg, green, points);
+        thread t2(getObjects, hsvImg, blue, points);
+        thread t3(getObjects, hsvImg, red, points);
+        thread t4(getObjects, hsvImg, yellow, points);
+        t1.join():
+        t2.join();
+        t3.join();
+        t4.join();
+        
+        cout << "unmapped points:" << endl;
+		cout << green.getPoint().x << "," << green.getPoint().y << " " << blue.getPoint().x << "," << blue.getPoint().y << " " << red.getPoint().x << "," << red.getPoint().y << " " << yellow.getPoint().x << "," << yellow.getPoint().y << endl;
 
-		greenPos = cv::Point(-1, -1);
-		purplePos = cv::Point(-1, -1);
-		redPos = cv::Point(-1, -1);
-		yellowPos = cv::Point(-1, -1);
+		int numPointsFound = getNumPointsFound(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
 
-		getChairPosition(origImg, greenPos, purplePos, redPos, yellowPos);
-		std::cout << greenPos.x << "," << greenPos.y << " " << purplePos.x << "," << purplePos.y << " " << redPos.x << "," << redPos.y << " " << yellowPos.x << "," << yellowPos.y << std::endl;
-
-		int numPointsFound = getNumPointsFound(greenPos, purplePos, redPos, yellowPos);
-
-		std::cout << "Found " << numPointsFound << " points" << std::endl;
+		cout << "Found " << numPointsFound << " points" << endl;
 
 		// do path finding if 2 or more points are found
 		if (numPointsFound >= 2){
-			ChairFrame cf = getChairFrame(greenPos, purplePos, redPos, yellowPos);
+			ChairFrame cf = getChairFrame(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
 			cp.processCurrentFrame(cf);
 			ChairFrame mappedFrame = cp.getMappedCurrentFrame();
-			cv::Mat mappedPoints(600, 600, CV_8UC3, cv::Scalar(0,0,0));
+			Mat mappedPoints(600, 600, CV_8UC3, Scalar(0,0,0));
 			drawMappedPoints(mappedFrame, mappedPoints);
-			//cv::imshow("mappedPoints", mappedPoints);
+			imshow("mappedPoints", mappedPoints);
 		}
 
 		// exit with esc key
-		int key = cv::waitKey(30);
-		std::cout << "key entered is " << key << std::endl;
+		int key = waitKey(30);
+		cout << "key entered is " << key << endl;
 		if (key == 27){
 			break;
 		}
