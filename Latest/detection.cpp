@@ -59,9 +59,9 @@ void drawObjects(vector<RotatedRect> boundingBox, vector<Point> centrePoints, Ma
 bool isRectangle(vector<Point> contour){
     double perim = arcLength(contour, true);
     vector<Point> approx;
-    approxPolyDp(contour, approx, 0.04 * perim. true);
-    if(approx.size == 4){
-        Rect rect = boudningRect(approx);
+    approxPolyDP(contour, approx, 0.05 * perim, true);
+    if(approx.size() == 4){
+        Rect rect = boundingRect(approx);
         if(rect.height > rect.width)
             return true;
     }
@@ -81,14 +81,14 @@ void trackObjects(Mat &filteredImg, Mat &drawMat, Object &obj){
 	for (int i = 0; i < contours.size(); i++){
 		RotatedRect rect = minAreaRect(contours[i]);
 
-		if (contourArea(contours[i]) >= 300 && isRectangle(contours[i])){
+		if (contourArea(contours[i]) >= 300){
 			boundingBox.push_back(rect);
 			centrePoints.push_back(rect.center);
-			if (contourArea(contours[i]) > maxArea){
-                maxBox.clear;
+			if (isRectangle(contours[i]) && contourArea(contours[i]) > maxArea){
+                maxBox.clear();
                 maxBox.push_back(rect);
-                maxPoint.clear;
-                maxPoint.push_back(rect);
+                maxPoint.clear();
+                maxPoint.push_back(rect.center);
 				maxArea = contourArea(contours[i]);
 				obj.setPoint(rect.center);
 			}
@@ -307,22 +307,19 @@ int main(int argc, char **argv) {
 	VideoCapture cap(0);
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, 2000);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, 2000);
-
+	
 	if (!cap.isOpened()){
 		cout << "webcam not on" << endl;
 		return -1;
 	}
 
-	string word;
-	cout << "Type \"start\" to capture the base frame" << endl;
-	while (word.compare("start") != 0){
-		getline(cin, word);
-	}
 	cout << "Capturing base frame" << endl;
 
 	// find the base frame with the initial image processing
 	Mat origImg;
 	cap.read(origImg);
+
+	imshow("base unprocessed", origImg);
     
     // blur the image to get rid of noise
 	medianBlur(origImg, origImg, 25);
@@ -353,9 +350,66 @@ int main(int argc, char **argv) {
     t2.join();
     t3.join();
     t4.join();
+
+	imshow("base", points);
     
 	ChairFrame baseFrame = getChairFrame(blue.getPoint(), green.getPoint(), yellow.getPoint(), red.getPoint());
 	ChairProcessor cp = ChairProcessor(baseFrame);
+
+	while (true){
+
+		if (!cap.isOpened()){
+		cout << "webcam not on" << endl;
+		return -1;
+	}
+
+	cout << "Capturing base frame" << endl;
+
+	// find the base frame with the initial image processing
+	cap.read(origImg);
+
+	imshow("base unprocessed", origImg);
+    
+    // blur the image to get rid of noise
+	medianBlur(origImg, origImg, 25);
+    
+    // convert input image to HSV
+	cvtColor(origImg, hsvImg, COLOR_BGR2HSV);
+    
+	// get the base frame
+	Object blue = Object("blue");
+	Object green = Object("green");
+	Object yellow = Object("yellow");
+	Object red = Object("red");
+    
+    // matrix to draw points on
+    Mat points = Mat::zeros(hsvImg.size(), CV_8UC3);
+    
+    // get objects with the corresponding colour
+	thread t1(getObjects, hsvImg, ref(blue), ref(points));
+    thread t2(getObjects, hsvImg, ref(green), ref(points));
+    thread t3(getObjects, hsvImg, ref(yellow), ref(points));    
+    thread t4(getObjects, hsvImg, ref(red), ref(points));
+
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+
+	imshow("base", points);
+    
+	ChairFrame baseFrame = getChairFrame(blue.getPoint(), green.getPoint(), yellow.getPoint(), red.getPoint());
+	ChairProcessor cp = ChairProcessor(baseFrame);
+	
+	string word;
+	cout << "Type \"r\" to recapture the base frame or \"start\" to start" << endl;
+	while (word.compare("start") != 0 || word.compare("r") != 0){
+		getline(cin, word);
+	}
+	if(word.compare("start") == 0){
+		exit;
+	}
+	}
 
 	// capture loop
 	while (true){
@@ -408,7 +462,7 @@ int main(int argc, char **argv) {
 		}
 
 		// exit with esc key
-		int key = waitKey(30);
+		int key = waitKey(3000);
 		cout << "key entered is " << key << endl;
 		if (key == 27){
 			break;

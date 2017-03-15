@@ -6,27 +6,27 @@ Object::Object(){
 Object::Object(string name){
     setColour(name);
     if (name == "red"){
-        setColour(Scalar(0, 0, 255));
-        setHsvMin(Scalar(160, 80, 20));
-        setHsvMax(Scalar(179, 120, 140));
+        setColourBgr(Scalar(0, 0, 255));
+        setHsvMin(Scalar(160, 100, 40));
+        setHsvMax(Scalar(179, 255, 255));
     }
 
     if (name == "blue"){
-        setColour(Scalar(255, 0, 0));
-        setHsvMin(Scalar(110, 20, 40));
-        setHsvMax(Scalar(140, 70, 90));
+        setColourBgr(Scalar(255, 0, 0));
+        setHsvMin(Scalar(115, 95, 95));
+        setHsvMax(Scalar(135, 160, 165));
     }
 
     if (name == "green"){
-        setColour(Scalar(0, 0, 255));
-        setHsvMin(Scalar(50, 60, 40));
-        setHsvMax(Scalar(80, 190, 90));
+        setColourBgr(Scalar(0, 255, 0));
+        setHsvMin(Scalar(70, 60, 60));
+        setHsvMax(Scalar(90, 160, 160));
     }
 
     if (name == "yellow"){
-        setColour(Scalar(0, 0, 255));
-        setHsvMin(Scalar(10, 100, 40));
-        setHsvMax(Scalar(30, 255, 100));
+        setColourBgr(Scalar(0, 255, 255));
+        setHsvMin(Scalar(20, 70, 50));
+        setHsvMax(Scalar(40, 135, 150));
     }    
 }
 
