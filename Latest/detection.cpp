@@ -56,26 +56,46 @@ void drawObjects(vector<RotatedRect> boundingBox, vector<Point> centrePoints, Ma
 	}
 }
 
+bool isRectangle(vector<Point> contour){
+    double perim = arcLength(contour, true);
+    vector<Point> approx;
+    approxPolyDp(contour, approx, 0.04 * perim. true);
+    if(approx.size == 4){
+        Rect rect = boudningRect(approx);
+        if(rect.height > rect.width)
+            return true;
+    }
+    
+    return false;
+}
+
 void trackObjects(Mat &filteredImg, Mat &drawMat, Object &obj){
 	vector<vector<Point> > contours;
 	findContours(filteredImg, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
+	
 	vector<RotatedRect> boundingBox;
 	vector<Point> centrePoints;
+    vector<RotatedRect> maxBox;
+    vector<Point> maxPoint;
 	double maxArea = 0;
 	for (int i = 0; i < contours.size(); i++){
 		RotatedRect rect = minAreaRect(contours[i]);
 
-		if (contourArea(contours[i]) >= 300){
+		if (contourArea(contours[i]) >= 300 && isRectangle(contours[i])){
 			boundingBox.push_back(rect);
 			centrePoints.push_back(rect.center);
 			if (contourArea(contours[i]) > maxArea){
+                maxBox.clear;
+                maxBox.push_back(rect);
+                maxPoint.clear;
+                maxPoint.push_back(rect);
 				maxArea = contourArea(contours[i]);
 				obj.setPoint(rect.center);
 			}
 		}
 	}
-	drawObjects(boundingBox, centrePoints, drawMat, obj.getColourBgr());
+    drawObjects(maxBox, maxPoint, drawMat, obj.getColourBgr());
+	//drawObjects(boundingBox, centrePoints, drawMat, obj.getColourBgr());
 }
 
 void setHsvRange(Object &obj){
