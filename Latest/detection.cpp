@@ -9,9 +9,9 @@
 #include <string.h>
 #include <opencv2/videoio.hpp>
 #include "ChairProcessor.h"
+#include "Object.h"
 #include <thread>
 #include <chrono>
-#include <Object.h>
 using namespace cv;
 using namespace std;
 
@@ -58,7 +58,6 @@ void drawObjects(vector<RotatedRect> boundingBox, vector<Point> centrePoints, Ma
 
 void trackObjects(Mat &filteredImg, Mat &drawMat, Object &obj){
 	vector<vector<Point> > contours;
-	vector<Vec4i> hierarchy;
 	findContours(filteredImg, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
 	vector<RotatedRect> boundingBox;
@@ -77,6 +76,25 @@ void trackObjects(Mat &filteredImg, Mat &drawMat, Object &obj){
 		}
 	}
 	drawObjects(boundingBox, centrePoints, drawMat, obj.getColourBgr());
+}
+
+void setHsvRange(Object &obj){
+    if(obj.getColour() == "green"){
+        obj.setHsvMin(Scalar(greenLowH, greenLowS, greenLowV));
+        obj.setHsvMax(Scalar(greenHighH, greenHighS, greenHighV));
+    }
+    else if(obj.getColour() == "blue"){
+        obj.setHsvMin(Scalar(blueLowH, blueLowS, blueLowV));
+        obj.setHsvMax(Scalar(blueHighH, blueHighS, blueHighV));
+    }
+    else if(obj.getColour() == "red"){
+        obj.setHsvMin(Scalar(redLowH, redLowS, redLowV));
+        obj.setHsvMax(Scalar(redHighH, redHighS, redHighV));
+    } 
+    else{
+        obj.setHsvMin(Scalar(yellowLowH, yellowLowS, yellowLowV));
+        obj.setHsvMax(Scalar(yellowHighH, yellowHighS, yellowHighV));
+    }
 }
 
 void morphImg(Mat &img){
@@ -111,25 +129,6 @@ void getObjects(Mat hsvImg, Object &obj, Mat &points){
 	trackObjects(threshold, points, obj);
 }
 
-void setHsvRange(Object &obj){
-    if(obj.getColour == "green"){
-        green.setHsvMin(Scalar(greenLowH, greenLowS, greenLowV));
-        green.setHsvMax(Scalar(greenHighH, greenHighS, greenHighV));
-    }
-    else if(obj.getColour == "blue"){
-        blue.setHsvMin(Scalar(blueLowH, blueLowS, blueLowV));
-        blue.setHsvMax(Scalar(blueHighH, blueHighS, blueHighV));
-    }
-    else if(obj.getColour == "red"){
-        red.setHsvMin(Scalar(redLowH, redLowS, redLowV));
-        red.setHsvMax(Scalar(redHighH, redHighS, redHighV));
-    } 
-    else{
-        yellow.setHsvMin(Scalar(yellowLowH, yellowLowS, yellowLowV));
-        yellow.setHsvMax(Scalar(yellowHighH, yellowHighS, yellowHighV));
-    }
-}
-
 bool readCapture(VideoCapture cap, Mat img){
 	bool success = cap.read(img);
 	if (!success){
@@ -146,8 +145,12 @@ ChairFrame getChairFrame(Point p1, Point p2, Point p3, Point p4){
 	return ChairFrame(fl, fr, bl, br);
 }
 
-int getNumPointsFound(Point &p1, Point &p2, Point &p3, Point &p4){
+int getNumPointsFound(Object &blue, Object &green, Object &yellow, Object &red){
 	int numPointsFound = 0;
+	Point p1 = blue.getPoint();	
+	Point p2 = green.getPoint();
+	Point p3 = yellow.getPoint();
+	Point p4 = red.getPoint();
 	if (p1.x != -1 && p1.y != -1){
 		numPointsFound++;
 	}
@@ -176,6 +179,10 @@ int getNumPointsFound(Point &p1, Point &p2, Point &p3, Point &p4){
 		p4.x = 0;
 		p4.y = 0;
 	}
+	blue.setPoint(p1);
+	green.setPoint(p2);
+	yellow.setPoint(p3);
+	red.setPoint(p4);
 	return numPointsFound;
 }
 
@@ -200,7 +207,7 @@ void drawMappedPoints(ChairFrame cf, Mat &map){
 	putText(map, "br", Point(p4.x, p4.y - 40), CV_FONT_HERSHEY_SIMPLEX, 2, Scalar::all(255), 3, 8);
 }
 
-void createControls(Object green, Object blue, Object red, Object yellow){
+void createControls(Object blue, Object green, Object yellow, Object red){
 
     //initialize control variables
     Scalar redHsvMin = red.getHsvMin();
@@ -304,29 +311,30 @@ int main(int argc, char **argv) {
 	Mat hsvImg;
 	cvtColor(origImg, hsvImg, COLOR_BGR2HSV);
     
-    // get the base frame
+	// get the base frame
+	Object blue = Object("blue");
 	Object green = Object("green");
-    Object blue = Object("blue");
-    Object red = Object("red");
-    Object yellow = Object("yellow");
+	Object yellow = Object("yellow");
+	Object red = Object("red");
     
     // create control windows
-	createControls(green, blue, red, yellow);
+	createControls(blue, green, yellow, red);
     
     // matrix to draw points on
     Mat points = Mat::zeros(hsvImg.size(), CV_8UC3);
     
     // get objects with the corresponding colour
-    thread t1(getObjects, hsvImg, green, points);
-    thread t2(getObjects, hsvImg, blue, points);
-    thread t3(getObjects, hsvImg, red, points);
-    thread t4(getObjects, hsvImg, yellow, points);
-    t1.join():
+	thread t1(getObjects, hsvImg, ref(blue), ref(points));
+    thread t2(getObjects, hsvImg, ref(green), ref(points));
+    thread t3(getObjects, hsvImg, ref(yellow), ref(points));    
+    thread t4(getObjects, hsvImg, ref(red), ref(points));
+
+    t1.join();
     t2.join();
     t3.join();
     t4.join();
     
-	ChairFrame baseFrame = getChairFrame(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
+	ChairFrame baseFrame = getChairFrame(blue.getPoint(), green.getPoint(), yellow.getPoint(), red.getPoint());
 	ChairProcessor cp = ChairProcessor(baseFrame);
 
 	// capture loop
@@ -336,8 +344,10 @@ int main(int argc, char **argv) {
 		if (!readCapture(cap, origImg)){
 			break;
 		}
+	imshow("original", origImg);
         
         medianBlur(origImg, origImg, 25);
+	imshow("blurred", origImg);
         cvtColor(origImg, hsvImg, COLOR_BGR2HSV);
         
         // reset points
@@ -348,25 +358,28 @@ int main(int argc, char **argv) {
         
         // matrix to draw points on
         points = Mat::zeros(hsvImg.size(), CV_8UC3);
-        thread t1(getObjects, hsvImg, green, points);
-        thread t2(getObjects, hsvImg, blue, points);
-        thread t3(getObjects, hsvImg, red, points);
-        thread t4(getObjects, hsvImg, yellow, points);
-        t1.join():
+    	thread t1(getObjects, hsvImg, ref(blue), ref(points));
+    	thread t2(getObjects, hsvImg, ref(green), ref(points));
+    	thread t3(getObjects, hsvImg, ref(yellow), ref(points));
+    	thread t4(getObjects, hsvImg, ref(red), ref(points));
+
+        t1.join();
         t2.join();
         t3.join();
         t4.join();
         
-        cout << "unmapped points:" << endl;
-		cout << green.getPoint().x << "," << green.getPoint().y << " " << blue.getPoint().x << "," << blue.getPoint().y << " " << red.getPoint().x << "," << red.getPoint().y << " " << yellow.getPoint().x << "," << yellow.getPoint().y << endl;
+	imshow("points", points);
 
-		int numPointsFound = getNumPointsFound(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
+        cout << "unmapped points:" << endl;
+		cout << blue.getPoint().x << "," << blue.getPoint().y << " " << green.getPoint().x << "," << green.getPoint().y << " " << yellow.getPoint().x << "," << yellow.getPoint().y << " " << red.getPoint().x << "," << red.getPoint().y << endl;
+
+		int numPointsFound = getNumPointsFound(blue, green, yellow, red);
 
 		cout << "Found " << numPointsFound << " points" << endl;
 
 		// do path finding if 2 or more points are found
 		if (numPointsFound >= 2){
-			ChairFrame cf = getChairFrame(green.getPoint(), blue.getPoint(), red.getPoint(), yellow.getPoint());
+			ChairFrame cf = getChairFrame(blue.getPoint(), green.getPoint(), yellow.getPoint(), red.getPoint());
 			cp.processCurrentFrame(cf);
 			ChairFrame mappedFrame = cp.getMappedCurrentFrame();
 			Mat mappedPoints(600, 600, CV_8UC3, Scalar(0,0,0));
