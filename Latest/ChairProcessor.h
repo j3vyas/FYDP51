@@ -13,11 +13,13 @@ class ChairProcessor {
 		ChairProcessor(ChairFrame baseFrameArg);
 		void processCurrentFrame(ChairFrame currentFrame);
 		ChairFrame getMappedCurrentFrame();
+		ChairPosition getCurrentPosition();
 	private: 
 		ChairFrame baseFrame;
 		ChairFrame mappedBaseFrame;
 		ChairFrame mappedCurrentFrame;
 		ChairPosition basePosition;
+		ChairPosition currentPosition;
 		ChairMove chairMove;
 		ChairMap chairMap;
 		ChairPath chairPath;

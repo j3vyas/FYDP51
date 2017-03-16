@@ -7,26 +7,28 @@ Object::Object(string name){
     setColour(name);
     if (name == "red"){
         setColourBgr(Scalar(0, 0, 255));
-        setHsvMin(Scalar(160, 100, 40));
-        setHsvMax(Scalar(179, 255, 255));
+        setHsvMin(Scalar(0, 40, 50));
+        setHsvMax(Scalar(10, 180, 170));
+        setHsvMinUpper(Scalar(170, 40, 50));
+        setHsvMaxUpper(Scalar(179, 180, 170));
     }
 
     if (name == "blue"){
         setColourBgr(Scalar(255, 0, 0));
-        setHsvMin(Scalar(115, 95, 95));
-        setHsvMax(Scalar(135, 160, 165));
+        setHsvMin(Scalar(145, 40, 40));
+        setHsvMax(Scalar(170, 140, 170));
     }
 
     if (name == "green"){
         setColourBgr(Scalar(0, 255, 0));
-        setHsvMin(Scalar(70, 60, 60));
-        setHsvMax(Scalar(90, 160, 160));
+        setHsvMin(Scalar(50, 60, 50));
+        setHsvMax(Scalar(70, 150, 170));
     }
 
     if (name == "yellow"){
         setColourBgr(Scalar(0, 255, 255));
-        setHsvMin(Scalar(20, 70, 50));
-        setHsvMax(Scalar(40, 135, 150));
+        setHsvMin(Scalar(70, 40, 40));
+        setHsvMax(Scalar(100, 150, 170));
     }    
 }
 
@@ -43,6 +45,14 @@ Scalar Object::getHsvMin(){
 
 Scalar Object::getHsvMax(){
     return Object::hsvMax;
+}
+
+Scalar Object::getHsvMinUpper(){
+    return Object::hsvMinUpper;
+}
+
+Scalar Object::getHsvMaxUpper(){
+    return Object::hsvMaxUpper;
 }
 
 Scalar Object::getColourBgr(){
@@ -63,6 +73,14 @@ void Object::setHsvMin(Scalar hsv){
 
 void Object::setHsvMax(Scalar hsv){
     Object::hsvMax = hsv;
+}
+
+void Object::setHsvMinUpper(Scalar hsv){
+    Object::hsvMinUpper = hsv;
+}
+
+void Object::setHsvMaxUpper(Scalar hsv){
+    Object::hsvMaxUpper = hsv;
 }
 
 void Object::setColourBgr(Scalar colour){

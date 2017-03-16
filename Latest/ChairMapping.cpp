@@ -6,11 +6,11 @@
 
 
 #define M_PI 3.14159265358979323846  /* pi */
-#define HEIGHT 23.0
-#define HEIGHT_RAD 0.7505
-#define X_PIXEL_RAD 0.001304
+#define HEIGHT 30.0
+#define HEIGHT_RAD 1.0472
+#define X_PIXEL_RAD 0.000713056
 #define X_CENTER 320.0
-#define Y_PIXEL_RAD 0.0013378
+#define Y_PIXEL_RAD 0.000713056
 #define Y_TOTAL 480.0
 
 #include <string>
@@ -56,6 +56,7 @@ ChairFrame ChairMapping::missingHandler(ChairFrame chairFrame) {
 			legsMissing++;
 		}
 	}
+	cout << "legsMissingCalc: "<< legsMissing << endl;
 
 	if (legsMissing == 0) {
 		return chairFrame;
@@ -97,16 +98,16 @@ ChairFrame ChairMapping::missingHandler(ChairFrame chairFrame) {
 		for (int i = 0; i < 4; i++) {
 			if (chairCoords[i].missing) {
 				if (i == 0) {
-					chairFrame.setBl(ChairCoord(xTemp/2, yTemp/2));
+					chairFrame.setBl(ChairCoord(xTemp/2 +1, yTemp/2 + 1));
 				}
 				else if (i == 1) {
-					chairFrame.setBr(ChairCoord(xTemp/2, yTemp/2));
+					chairFrame.setBr(ChairCoord(xTemp/2 + 1, yTemp/2 -1));
 				}
 				else if (i == 2) {
-					chairFrame.setFl(ChairCoord(xTemp/2, yTemp/2));
+					chairFrame.setFl(ChairCoord(xTemp/2 - 1, yTemp/2 + 1));
 				}
 				else {
-					chairFrame.setFr(ChairCoord(xTemp/2, yTemp/2));
+					chairFrame.setFr(ChairCoord(xTemp/2 - 1, yTemp/2 - 1));
 				}
 			}
 		}
@@ -128,7 +129,7 @@ ChairPosition ChairMapping::mapPosition(ChairFrame chairFrame) {
 	double directionY = 0.5*(chairFrame.getFl().y + chairFrame.getFr().y - (chairFrame.getBl().y + chairFrame.getBr().y));
 
 	chairPosition.setPosition(ChairCoord(positionX, positionY));
-	chairPosition.setPosition(ChairCoord(directionX, directionY));
+	chairPosition.setDirection(ChairCoord(directionX, directionY));
 
 	string chairPosString = "";
 

@@ -14,17 +14,21 @@ class Object
     		Point getPoint();
     		Scalar getHsvMin();
     		Scalar getHsvMax();
+		Scalar getHsvMinUpper();
+		Scalar getHsvMaxUpper();
     		Scalar getColourBgr();
     		string getColour();
     
     		void setPoint(Point point);
     		void setHsvMin(Scalar hsv);
     		void setHsvMax(Scalar hsv);
+		void setHsvMinUpper(Scalar hsv);
+		void setHsvMaxUpper(Scalar hsv);
     		void setColourBgr(Scalar bgr);
     		void setColour(string colour);
     
  private:
     		Point point;
-    		Scalar hsvMin, hsvMax, colourBgr;
+    		Scalar hsvMin, hsvMax, hsvMinUpper, hsvMaxUpper, colourBgr;
     		string colour;
 };

@@ -7,7 +7,7 @@
 class ChairMove {
 
 	public:
-		ChairMove::ChairMove();
+		ChairMove();
     
 		void turnRight();
     
