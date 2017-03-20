@@ -42,23 +42,23 @@ ChairMove::ChairMove():
 }
     
 void ChairMove::turnRight() {
-	send_motor_command("SF-150-B-150X");
+	send_motor_command("SF-200-B-200X");
 	cout << "TURN RIGHT" << endl;
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(400));
 	ChairMove::moveStop();
 }
     
 void ChairMove::turnLeft() {
-	send_motor_command("SB-150-F-150X");
+	send_motor_command("SB-200-F-200X");
 	cout << "TURN LEFT" << endl;
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(400));
 	ChairMove::moveStop();
 }
 
 void ChairMove::moveForward() {
 	send_motor_command("SF-100-F-100X");
 	cout << "FORWARD" << endl;
-	std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+	//std::this_thread::sleep_for(std::chrono::milliseconds(400));
 	ChairMove::moveStop();
 }
     

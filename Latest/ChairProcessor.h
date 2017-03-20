@@ -18,8 +18,10 @@ class ChairProcessor {
 		ChairFrame baseFrame;
 		ChairFrame mappedBaseFrame;
 		ChairFrame mappedCurrentFrame;
+		ChairFrame mappedPrevFrame;
 		ChairPosition basePosition;
 		ChairPosition currentPosition;
+		ChairPosition prevPosition;
 		ChairMove chairMove;
 		ChairMap chairMap;
 		ChairPath chairPath;

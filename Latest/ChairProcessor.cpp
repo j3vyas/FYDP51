@@ -13,14 +13,18 @@ ChairProcessor::ChairProcessor(ChairFrame baseFrameArg):
 	basePosition(ChairMapping::mapPosition(mappedBaseFrame)),
 	chairMove(ChairMove()),
     chairMap(ChairMap(mappedBaseFrame)),
-	chairPath(ChairPath(chairMove, basePosition))
+	chairPath(ChairPath(chairMove, basePosition)),
+	mappedPrevFrame(mappedBaseFrame),
+	prevPosition(basePosition)
 {
 }
     
 void ChairProcessor::processCurrentFrame(ChairFrame currentFrame) {
-    	this->mappedCurrentFrame = ChairMapping::mapFrame(currentFrame);
+    this->mappedCurrentFrame = ChairMapping::frameComparer(ChairMapping::mapFrame(currentFrame), mappedPrevFrame);
 	this->currentPosition = ChairMapping::mapPosition(mappedCurrentFrame);
 	chairPath.moveChair(this->currentPosition);
+	this->mappedPrevFrame = mappedCurrentFrame;
+	this->prevPosition = currentPosition;
 }
 
 ChairFrame ChairProcessor::getMappedCurrentFrame(){

@@ -14,9 +14,11 @@ class ChairMapping {
 		static ChairCoord toCartesian(double radius, double angle);
 		static double calculateXCoord(double x);
 		static double calculateYCoord(double y);
+		static ChairFrame frameComparer(ChairFrame currentFrame, ChairFrame prevFrame);
 
 	private:
 		static ChairFrame missingHandler(ChairFrame chairFrame);
+		static double calculateDistance(ChairCoord fir, ChairCoord sec);
 };
 
 #endif

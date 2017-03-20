@@ -6,7 +6,7 @@
 
 
 #define M_PI 3.14159265358979323846  /* pi */
-#define HEIGHT 30.0
+#define HEIGHT 22.0
 #define HEIGHT_RAD 1.0472
 #define X_PIXEL_RAD 0.000713056
 #define X_CENTER 320.0
@@ -164,4 +164,39 @@ double ChairMapping::calculateXCoord(double x) {
 
 double ChairMapping::calculateYCoord(double y) {
 	return Y_PIXEL_RAD * (Y_TOTAL - y);
+}
+
+double ChairMapping::calculateDistance(ChairCoord fir, ChairCoord sec) {
+	return sqrt(pow(abs(fir.x - sec.x), 2) + pow(abs(fir.y - sec.y), 2));
+}
+
+ChairFrame ChairMapping::frameComparer(ChairFrame currentFrame, ChairFrame prevFrame) {
+	const double DIST_THRESHOLD = 5;
+	ChairFrame newFrame = ChairFrame();
+
+	if (calculateDistance(currentFrame.getBl(), prevFrame.getBl()) > DIST_THRESHOLD) {
+		newFrame.setBl(currentFrame.getBl());
+	}
+	else {
+		newFrame.setBl(prevFrame.getBl());
+	}
+	if (calculateDistance(currentFrame.getBr(), prevFrame.getBr()) > DIST_THRESHOLD) {
+		newFrame.setBr(currentFrame.getBr());
+	}
+	else {
+		newFrame.setBr(prevFrame.getBr());
+	}
+	if (calculateDistance(currentFrame.getFl(), prevFrame.getFl()) > DIST_THRESHOLD) {
+		newFrame.setFl(currentFrame.getFl());
+	}
+	else {
+		newFrame.setFl(prevFrame.getFl());
+	}
+	if (calculateDistance(currentFrame.getFr(), prevFrame.getFr()) > DIST_THRESHOLD) {
+		newFrame.setFr(currentFrame.getFr());
+	}
+	else {
+		newFrame.setFr(prevFrame.getFr());
+	}
+	return newFrame;
 }
